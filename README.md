@@ -1,5 +1,8 @@
 # Docker setup: netopeer2
 
+- [Docker setup: netopeer2](#docker-setup-netopeer2)
+  - [NETCONF server](#netconf-server)
+
 ## NETCONF server
 
 - **terminal 1**: run NETCONF server in `sysrepo` container
@@ -34,6 +37,4 @@
 
   ![terminal-3](terminal-3.png)
 
-### Source
-
-[hub.docker.com/r/sysrepo/sysrepo-netopeer2](https://hub.docker.com/r/sysrepo/sysrepo-netopeer2)
+[source](https://hub.docker.com/r/sysrepo/sysrepo-netopeer2)
