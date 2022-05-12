@@ -10,7 +10,7 @@
   - `docker run -i -t --name sysrepo sysrepo/sysrepo-netopeer2`
     - _For interactive processes, you must use `-i -t` together in order to allocate a tty for the container process_ ([reference](https://docs.docker.com/engine/reference/run/#foreground))
 
-  ![terminal-1](terminal-1.png)
+  ![/images/terminal-1](/images/terminal-1.png)
 
 - **terminal 2**: connect to the NETCONF server via SSH
   - `docker inspect sysrepo | grep -w "IPAddress"`
@@ -21,7 +21,7 @@
     - password: `netconf`
     - `-s ctl_path`: _Specifies the location of a control socker for connection sharing_ ([reference](https://linux.die.net/man/1/ssh))
 
-  ![terminal-2](terminal-2.png)
+  ![/images/terminal-2](/images/terminal-2.png)
 
 - **terminal 3**: access `sysrepoctl` or `sysrepocfg` exec bash in the `sysrepo` container
   - `docker exec -it sysrepo /bin/bash`
@@ -35,6 +35,6 @@
   - `sysrepoctl -l` 
   - `sysrepocfg`
 
-  ![terminal-3](terminal-3.png)
+  ![/images/terminal-3](/images/terminal-3.png)
 
 [source](https://hub.docker.com/r/sysrepo/sysrepo-netopeer2)
