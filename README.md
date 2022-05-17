@@ -1,114 +1,80 @@
-# Docker setup: netopeer2
+# Netopeer2 Docker setup
 
-- [Docker setup: netopeer2](#docker-setup-netopeer2)
-  - [NETCONF server (in Docker container)](#netconf-server-in-docker-container)
-  - [NETCONF client (on host OS)](#netconf-client-on-host-os)
-  - [NETCONF client (in Docker container)](#netconf-client-in-docker-container)
+## netopeer2-server
 
-## NETCONF server (in Docker container)
+[Source](https://github.com/sysrepo-archive/docker-sysrepo-netopeer2/blob/master/Dockerfile)
 
-`docker system prune` removes all stopped containers, dangling images and unused networks
+Remove all stopped containers, dangling images and unused networks:
 
-- **terminal 1**: run NETCONF server in `sysrepo` container
-  - `docker pull sysrepo/sysrepo-netopeer2`
-  - `docker run -i -t --name sysrepo sysrepo/sysrepo-netopeer2`
-    - _For interactive processes, you must use `-i -t` together in order to allocate a tty for the container process_ ([reference](https://docs.docker.com/engine/reference/run/#foreground))
-
-  ![/images/terminal-1](/images/terminal-1.png)
-
-- **terminal 2**: connect to the NETCONF server via SSH
-  - `docker inspect sysrepo | grep -w "IPAddress"`
-    - `-w`, `--word`: _Select only those lines containing matches that form whole words_ ([reference](https://linuxcommand.org/lc3_man_pages/grep1.html))
-  - `docker inspect sysrepo | grep -A1 -w "Ports"`
-    - `-A NUM`: _Print NUM lines of trailing context after matching lines_ ([reference](https://linuxcommand.org/lc3_man_pages/grep1.html))
-  - `ssh netconf@172.17.0.2 -p 830 -s netconf`
-    - password: `netconf`
-    - `-s ctl_path`: _Specifies the location of a control socker for connection sharing_ ([reference](https://linux.die.net/man/1/ssh))
-
-  ![/images/terminal-2](/images/terminal-2.png)
-
-- **terminal 3**: access `sysrepoctl` or `sysrepocfg` exec bash in the `sysrepo` container
-  - `docker exec -it sysrepo /bin/bash`
-  - `sysrepoctl -l`
-    - _sysrepoctl is a command-line tool for manipulation of YANG schemes in sysrepo (list currently installed schemas and add, remove or modify them)_ ([reference](https://manpages.debian.org/unstable/sysrepo/sysrepoctl.1.en.html))
-  - `sysrepocfg`
-    - _sysrepocfg allows to work with configuration in many ways such as importing, exporting, editing and replacing (copying-from a file or datastore) it. It is also possible to send an rpc/action or a notification_ ([reference](https://netopeer.liberouter.org/doc/sysrepo/libyang1/html/sysrepocfg.html))
-- **_alternative_ terminal 3**: connect to NETCONF server via [`testconf`](https://hub.docker.com/r/sysrepo/testconf/)
-  - `docker run -i -t --link sysrepo --name testconf --rm sysrepo/testconf:latest bash`
-    - `--rm`: _By default a container's file system persist even after the container exits. This makes debugging easier (since you can inspect the final state) and you retain all your data by default. But if you are running short-term foreground processes, these container file systems can really pile up. If instead you'd like Docker to automatically clean up the container and remove the file system when the container exits, you can add this flag._ ([reference](https://docs.docker.com/engine/reference/run/#clean-up---rm))
-  - `sysrepoctl -l` 
-  - `sysrepocfg`
-
-  ![/images/terminal-3](/images/terminal-3.png)
-
-[source](https://hub.docker.com/r/sysrepo/sysrepo-netopeer2)
-
-## NETCONF client (on host OS)
-
-Now we can try connecting a NETCONF client running on our computer to the NETCONF server running inside the Docker container.
-
-Open a new terminal window
-
-`sudo -i`
-
-`netopeer2-cli -v3`
-
-`help`: displays all commands
-
-`connect --host 172.17.0.2 --port 830 --login netconf`
-
-![images/netopeer-client-1.png](/images/netopeer-client-1.png)
-
-`get-config --source running`: get the running netopeer2-server configuration
-
-```xml
-DATA
-<data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
-  <keystore xmlns="urn:ietf:params:xml:ns:yang:ietf-keystore">
-    <asymmetric-keys>
-      <asymmetric-key>
-        <name>genkey</name>
-        <algorithm>rsa2048</algorithm>
-        <public-key>...</private-key>
-      </asymmetric-key>
-    </asymmetric-keys>
-  </keystore>
-  <netconf-server xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-server">
-    <listen>
-      <endpoint>
-        <name>default-ssh</name>
-        <ssh>
-          <tcp-server-parameters>
-            <local-address>0.0.0.0</local-address>
-            <keepalives>
-              <idle-time>1</idle-time>
-              <max-probes>10</max-probes>
-              <probe-interval>5</probe-interval>
-            </keepalives>
-          </tcp-server-parameters>
-          <ssh-server-parameters>
-            <server-identity>
-              <host-key>
-                <name>default-key</name>
-                <public-key>
-                  <keystore-reference>genkey</keystore-reference>
-                </public-key>
-              </host-key>
-            </server-identity>
-            <client-authentication>
-              <supported-authentication-methods>
-                <publickey/>
-                <passsword/>
-                <other>interactive</other>
-              </supported-authentication-methods>
-            </client-authentication>
-          </ssh-server-parameters>
-        </ssh>
-      </endpoint>
-    </listen>
-  </netconf-server>
-</data>
+```
+docker system prune
 ```
 
-## NETCONF client (in Docker container)
+```
+docker build -t netopeer2-server .
+docker run -i -t netopeer2-server
+```
 
+```
+apt-get update
+apt-get upgrade -y
+apt-get autoclean
+apt-get autoremove
+
+
+# Source: https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image
+ARG_DEBIAN_FRONTEND=noninteractive
+ENV_TZ=Europe/Tallinn
+apt-get install -y tzdata
+
+apt-get install git cmake build-essential bison flex libpcre3-dev libev-dev libavl-dev libprotobuf-c-dev protobuf-c-compiler swig python-dev lua5.2 pkg-config libpcre++-dev openssl libssl-dev libcrypto++-dev zlib1g-dev libpcre2-dev libssh-dev uncrustify libcmocka-dev
+
+apt-get install -y wget
+
+wget \
+  https://git.libssh.org/projects/libssh.git/snapshot/libssh-0.9.6.tar.gz
+tar -xf libssh-0.9.6.tar.gz
+rm libssh-0.9.6.tar.gz
+cd libssh-0.9.6
+mkdir build
+cd build
+cmake ..
+make
+make install
+
+cd ~
+mkdir NetConfServer
+cd NetConfServer
+
+git clone https://github.com/CESNET/libyang.git
+cd libyang
+mkdir build
+cd build
+cmake ..
+make && make install
+
+cd ~/NetConfServer
+git clone https://github.com/sysrepo/sysrepo.git
+cd sysrepo
+mkdir build
+cd build
+cmake ..
+make && make install
+
+cd ~/NetConfServer
+git clone https://github.com/CESNET/libnetconf2.git
+cd libnetconf2
+mkdir build
+cd build
+cmake ..
+make && make install
+
+cd ~/NetConfServer
+ldconfig /usr/local/lib
+git clone https://github.com/CESNET/netopeer2.git
+cd netopeer2
+mkdir build
+cd build
+cmake ..
+make && make install
+```
