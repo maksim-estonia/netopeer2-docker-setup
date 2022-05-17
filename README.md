@@ -1,9 +1,13 @@
 # Docker setup: netopeer2
 
 - [Docker setup: netopeer2](#docker-setup-netopeer2)
-  - [NETCONF server](#netconf-server)
+  - [NETCONF server (in Docker container)](#netconf-server-in-docker-container)
+  - [NETCONF client (on host OS)](#netconf-client-on-host-os)
+  - [NETCONF client (in Docker container)](#netconf-client-in-docker-container)
 
-## NETCONF server
+## NETCONF server (in Docker container)
+
+`docker system prune` removes all stopped containers, dangling images and unused networks
 
 - **terminal 1**: run NETCONF server in `sysrepo` container
   - `docker pull sysrepo/sysrepo-netopeer2`
@@ -38,3 +42,73 @@
   ![/images/terminal-3](/images/terminal-3.png)
 
 [source](https://hub.docker.com/r/sysrepo/sysrepo-netopeer2)
+
+## NETCONF client (on host OS)
+
+Now we can try connecting a NETCONF client running on our computer to the NETCONF server running inside the Docker container.
+
+Open a new terminal window
+
+`sudo -i`
+
+`netopeer2-cli -v3`
+
+`help`: displays all commands
+
+`connect --host 172.17.0.2 --port 830 --login netconf`
+
+![images/netopeer-client-1.png](/images/netopeer-client-1.png)
+
+`get-config --source running`: get the running netopeer2-server configuration
+
+```xml
+DATA
+<data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <keystore xmlns="urn:ietf:params:xml:ns:yang:ietf-keystore">
+    <asymmetric-keys>
+      <asymmetric-key>
+        <name>genkey</name>
+        <algorithm>rsa2048</algorithm>
+        <public-key>...</private-key>
+      </asymmetric-key>
+    </asymmetric-keys>
+  </keystore>
+  <netconf-server xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-server">
+    <listen>
+      <endpoint>
+        <name>default-ssh</name>
+        <ssh>
+          <tcp-server-parameters>
+            <local-address>0.0.0.0</local-address>
+            <keepalives>
+              <idle-time>1</idle-time>
+              <max-probes>10</max-probes>
+              <probe-interval>5</probe-interval>
+            </keepalives>
+          </tcp-server-parameters>
+          <ssh-server-parameters>
+            <server-identity>
+              <host-key>
+                <name>default-key</name>
+                <public-key>
+                  <keystore-reference>genkey</keystore-reference>
+                </public-key>
+              </host-key>
+            </server-identity>
+            <client-authentication>
+              <supported-authentication-methods>
+                <publickey/>
+                <passsword/>
+                <other>interactive</other>
+              </supported-authentication-methods>
+            </client-authentication>
+          </ssh-server-parameters>
+        </ssh>
+      </endpoint>
+    </listen>
+  </netconf-server>
+</data>
+```
+
+## NETCONF client (in Docker container)
+
