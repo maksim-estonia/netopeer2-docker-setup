@@ -1,0 +1,11 @@
+version: "3.7"
+
+services:
+  netopeer2-server:
+    image: netopeer2
+    stdin_open: true
+    tty: true
+  netopeer2-client:
+    image: netopeer2
+    stdin_open: true
+    tty: true

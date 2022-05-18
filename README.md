@@ -43,7 +43,7 @@ Run `netopeer2-server` container
 
 ```
 docker run -i -t --name netopeer2-server \
-      --network netopeer2-network --network-alias server \
+      --network netopeer2-network \
       netopeer2
 ```
 
@@ -62,7 +62,7 @@ Run `netopeer2-client` container
 
 ```
 docker run -i -t --name netopeer2-client \
-      --network netopeer2-network --network-alias client \
+      --network netopeer2-network \
       netopeer2
 ```
 
@@ -72,10 +72,10 @@ Start running netopeer2 client
 root@xxxxxxxxx:/# netopeer2-cli -v3
 ```
 
-Connect to netopeer2-server using network alias (password: `netopeer`)
+Connect to netopeer2-server (password: `netopeer`)
 
 ```
-root@xxxxxxxxx:/# connect --host server
+root@xxxxxxxxx:/# connect --host netopeer2-server
 ```
 
 ![netopeer-client-setup](images/netopeer2-client-setup.png)
@@ -87,3 +87,47 @@ get-config --source running
 ```
 
 ## Setup netopeer2 server-client network (Docker compose)
+
+### server
+
+The command we used:
+
+```
+docker run -i -t --name netopeer2-server \
+      --network netopeer2-network \
+      netopeer2
+```
+
+In `docker-compose` this becomes the following service:
+
+```
+services:
+      netopeer2-server:
+            image: netopeer2
+            stdin_open: true # docker run -i
+            tty: true        # docker run -t
+```
+
+### client
+
+The command we used:
+
+```
+docker run -i -t --name netopeer2-client \
+      --network netopeer2-network \
+      netopeer2
+```
+
+In `docker-compose` this becomes the following service:
+
+```
+services:
+      netopeer2-client:
+            image: netopeer2
+            stdin_open: true # docker run -i
+            tty: true        # docker run -t
+```
+
+Open terminal for netopeer-client: `docker exec -ti netopeer2-docker-setup_netopeer2-client_1 sh`
+
+Open terminal for netopeer-server: `docker exec -ti netopeer2-docker-setup_netopeer2-server_1 sh`
