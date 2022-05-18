@@ -1,6 +1,6 @@
 # Netopeer2 Docker setup
 
-## netopeer2-server
+## Create a netopeer2 image
 
 [Source](https://github.com/sysrepo-archive/docker-sysrepo-netopeer2/blob/master/Dockerfile)
 
@@ -10,71 +10,80 @@ Remove all stopped containers, dangling images and unused networks:
 docker system prune
 ```
 
-```
-docker build -t netopeer2-server .
-docker run -i -t netopeer2-server
-```
+Build the `netopeer2` image
 
 ```
-apt-get update
-apt-get upgrade -y
-apt-get autoclean
-apt-get autoremove
-
-
-# Source: https://serverfault.com/questions/949991/how-to-install-tzdata-on-a-ubuntu-docker-image
-ARG_DEBIAN_FRONTEND=noninteractive
-ENV_TZ=Europe/Tallinn
-apt-get install -y tzdata
-
-apt-get install git cmake build-essential bison flex libpcre3-dev libev-dev libavl-dev libprotobuf-c-dev protobuf-c-compiler swig python-dev lua5.2 pkg-config libpcre++-dev openssl libssl-dev libcrypto++-dev zlib1g-dev libpcre2-dev libssh-dev uncrustify libcmocka-dev
-
-apt-get install -y wget
-
-wget \
-  https://git.libssh.org/projects/libssh.git/snapshot/libssh-0.9.6.tar.gz
-tar -xf libssh-0.9.6.tar.gz
-rm libssh-0.9.6.tar.gz
-cd libssh-0.9.6
-mkdir build
-cd build
-cmake ..
-make
-make install
-
-cd ~
-mkdir NetConfServer
-cd NetConfServer
-
-git clone https://github.com/CESNET/libyang.git
-cd libyang
-mkdir build
-cd build
-cmake ..
-make && make install
-
-cd ~/NetConfServer
-git clone https://github.com/sysrepo/sysrepo.git
-cd sysrepo
-mkdir build
-cd build
-cmake ..
-make && make install
-
-cd ~/NetConfServer
-git clone https://github.com/CESNET/libnetconf2.git
-cd libnetconf2
-mkdir build
-cd build
-cmake ..
-make && make install
-
-cd ~/NetConfServer
-ldconfig /usr/local/lib
-git clone https://github.com/CESNET/netopeer2.git
-cd netopeer2
-mkdir build
-cd build
-cmake ..
-make && make install
+docker build -t netopeer2 .
 ```
+
+`Dockerfile`:
+
+```
+FROM ubuntu:20.04
+
+COPY ./netopeer2-setup.sh .
+
+RUN chmod +x netopeer2-setup.sh
+RUN ./netopeer2-setup.sh
+```
+
+`netopeer2-setup.sh` installs all the necessary packages/libraries to run netopeer2
+
+## Setup netopeer2 server-client network (manually)
+
+Create the `netopeer2-network`
+
+```
+docker network create netopeer2-network
+```
+
+**Terminal 1** (server)
+
+Run `netopeer2-server` container
+
+```
+docker run -i -t --name netopeer2-server \
+      --network netopeer2-network --network-alias server \
+      netopeer2
+```
+
+Set password (`netopeer` for example) and start running netopeer2 server
+
+```
+root@xxxxxxxxx:/# passwd
+root@xxxxxxxxx:/# netopeer2-server -d -v3
+```
+
+![netopeer-2-server-setup](images/netopeer2-server-setup.png)
+
+**Terminal 2** (client)
+
+Run `netopeer2-client` container
+
+```
+docker run -i -t --name netopeer2-client \
+      --network netopeer2-network --network-alias client \
+      netopeer2
+```
+
+Start running netopeer2 client
+
+```
+root@xxxxxxxxx:/# netopeer2-cli -v3
+```
+
+Connect to netopeer2-server using network alias (password: `netopeer`)
+
+```
+root@xxxxxxxxx:/# connect --host server
+```
+
+![netopeer-client-setup](images/netopeer2-client-setup.png)
+
+Get the running netopeer2 server configuration:
+
+```
+get-config --source running
+```
+
+## Setup netopeer2 server-client network (Docker compose)
